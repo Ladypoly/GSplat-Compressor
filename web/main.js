@@ -433,9 +433,10 @@ for (const k of ['orig', 'result']) {
       w.addEventListener('wheel', () => { cam.leader = k; cam.leaderUntil = performance.now() + LINGER_MS; }, { capture: true, passive: true });
     } catch {}
     // Viewers start in 'anim' mode (a synthesized intro orbit), which re-applies
-    // its own pose every frame and blocks setCameraState. The 'f' (frame) key
+    // its own pose every frame and blocks setCameraState. The 'r' (reset) key
     // goes through the viewer's input path to switch to interactive 'orbit'
-    // mode and frame the scene — which sticks. Retry until the API is ready.
+    // mode AT the configured initial camera (eye-level, scene centre) — which
+    // sticks. Retry until the API is ready.
     kickToOrbit(k);
   });
 }
@@ -449,7 +450,7 @@ function kickToOrbit(k, tries = 0) {
       if (s && s.mode === 'orbit') {
         done = true;
       } else {
-        const ev = { key: 'f', code: 'KeyF', keyCode: 70, bubbles: true };
+        const ev = { key: 'r', code: 'KeyR', keyCode: 82, bubbles: true };
         w.dispatchEvent(new KeyboardEvent('keydown', ev));
         w.document.dispatchEvent(new KeyboardEvent('keydown', ev));
       }

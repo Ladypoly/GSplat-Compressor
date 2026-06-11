@@ -7,6 +7,21 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <!-- Animated turbulence used for the splat load reveal -->
+    <svg class="filters" width="0" height="0" aria-hidden="true">
+      <filter id="turbFilter">
+        <feTurbulence type="fractalNoise" baseFrequency="0.009 0.016" numOctaves="2" seed="4" stitchTiles="stitch" result="noise">
+          <animate attributeName="baseFrequency" dur="9s" values="0.009 0.016;0.018 0.028;0.009 0.016" repeatCount="indefinite" />
+          <animate attributeName="seed" dur="14s" values="4;9;4" repeatCount="indefinite" />
+        </feTurbulence>
+        <feColorMatrix in="noise" type="matrix"
+          values="0 0 0 0 0.30
+                  0 0 0 0 0.52
+                  0 0 0 0 1
+                  0 0 0 1.7 -0.55" />
+      </filter>
+    </svg>
+
     <header>
       <h1>GSplat Compressor</h1>
       <p class="sub">Load → Compress → Review → Export · runs entirely in your browser · powered by SplatTransform</p>
@@ -91,14 +106,14 @@
             <figcaption>Original</figcaption>
             <div class="viewer-wrap" id="wrapOrig">
               <iframe id="viewerOrig" title="Original splat"></iframe>
-              <div class="viewer-loading"><span class="loader-ring"></span><span class="loader-text">Loading splat…</span></div>
+              <div class="viewer-loading"><div class="turb-bg"></div><span class="loader-text">Materializing…</span></div>
             </div>
           </figure>
           <figure>
             <figcaption id="resultCaption">Result</figcaption>
             <div class="viewer-wrap" id="wrapResult">
               <iframe id="viewerResult" title="Compressed splat"></iframe>
-              <div class="viewer-loading"><span class="loader-ring"></span><span class="loader-text">Loading splat…</span></div>
+              <div class="viewer-loading"><div class="turb-bg"></div><span class="loader-text">Materializing…</span></div>
             </div>
             <div id="resultNote" class="note hidden"></div>
           </figure>

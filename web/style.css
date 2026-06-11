@@ -227,20 +227,45 @@ button.primary:not(:disabled):hover { filter: brightness(1.08); }
   position: absolute;
   inset: 0;
   display: flex;
-  flex-direction: column;
-  gap: 14px;
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: radial-gradient(circle at 50% 42%, #181b25, #0b0c10 75%);
-  color: var(--muted);
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, #161924, #0b0c10 78%);
+  color: #cdd6ee;
   font-size: 13px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.45s ease;
 }
 .viewer-wrap.loading .viewer-loading { opacity: 1; }
+.viewer-wrap.ready .viewer-loading { opacity: 0; }
 
+/* swirling turbulence field — appears while decoding, blows away on reveal */
+.turb-bg {
+  position: absolute;
+  inset: -25%;
+  filter: url(#turbFilter);
+  opacity: 0;
+  transform: scale(1);
+  transition: opacity 0.6s ease, transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 0;
+}
+.viewer-wrap.loading .turb-bg { opacity: 0.85; }
+.viewer-wrap.ready .turb-bg { opacity: 0; transform: scale(1.3); }
+
+.loader-text {
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12px;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+/* spinner ring (still used by the compression progress header) */
 .loader-ring {
   width: 38px;
   height: 38px;
@@ -250,8 +275,6 @@ button.primary:not(:disabled):hover { filter: brightness(1.08); }
   animation: spin 0.85s linear infinite;
 }
 .loader-ring.small { width: 15px; height: 15px; border-width: 2px; }
-.loader-text { letter-spacing: 0.02em; animation: pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 
 /* compression progress bar */
 .progress { display: flex; flex-direction: column; gap: 8px; }
