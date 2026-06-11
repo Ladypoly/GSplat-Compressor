@@ -1,0 +1,21 @@
+{
+  "name": "gsplat-compressor",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Convert and compress Gaussian splats entirely in the browser using SplatTransform",
+  "scripts": {
+    "prepare-assets": "node scripts/copy-assets.mjs",
+    "dev": "npm run prepare-assets && vite",
+    "build": "npm run prepare-assets && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@playcanvas/splat-transform": "latest",
+    "@playcanvas/supersplat-viewer": "latest",
+    "playcanvas": "^2.19.6"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

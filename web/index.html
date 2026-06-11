@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GSplat Compressor</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>GSplat Compressor</h1>
+      <p class="sub">Load → Compress → Review → Export · runs entirely in your browser · powered by SplatTransform</p>
+    </header>
+
+    <main>
+      <!-- STEP 1: LOAD -->
+      <section id="step-load" class="card">
+        <h2><span class="num">1</span> Load splat</h2>
+        <div id="dropzone" class="dropzone">
+          <p>Drag a splat file here, or click to choose</p>
+          <p class="hint">.ply · .compressed.ply · .sog · .spz · .splat · .ksplat · .lcc</p>
+          <input type="file" id="fileInput" hidden />
+        </div>
+        <div id="loadInfo" class="info hidden"></div>
+      </section>
+
+      <!-- STEP 2: COMPRESS -->
+      <section id="step-compress" class="card disabled">
+        <h2><span class="num">2</span> Compress</h2>
+        <div class="controls">
+          <label>Output format
+            <select id="format">
+              <option value="sog">SOG (smallest, recommended)</option>
+              <option value="compressed_ply">Compressed PLY (compatible)</option>
+              <option value="spz">SPZ (Niantic)</option>
+            </select>
+          </label>
+
+          <label class="check">
+            <input type="checkbox" id="filterNan" checked /> Remove NaN / Inf splats
+          </label>
+
+          <div class="decimate-group">
+            <div class="decimate-head">
+              <span>Decimate</span>
+              <span id="decimateReadout" class="hint">Keep 100% · all splats</span>
+            </div>
+            <input type="range" id="decimateSlider" min="1" max="100" value="100" />
+            <div class="decimate-counts">
+              <span class="count-line">Current splats <b id="currentCount">—</b></span>
+              <label class="count-line">Target splats
+                <input type="number" id="targetCount" min="1" placeholder="—" />
+              </label>
+            </div>
+          </div>
+
+          <label>Spherical harmonics
+            <select id="harmonics">
+              <option value="">Keep all bands</option>
+              <option value="2">Cap at band 2</option>
+              <option value="1">Cap at band 1</option>
+              <option value="0">Drop SH (band 0)</option>
+            </select>
+          </label>
+
+          <label class="fmt-sog">SOG iterations
+            <input type="number" id="iterations" value="10" min="1" max="100" />
+          </label>
+
+          <label class="fmt-spz hidden">SPZ version
+            <select id="spzVersion">
+              <option value="3">3 (gzip, compatible)</option>
+              <option value="4">4 (ZSTD, newer)</option>
+            </select>
+          </label>
+        </div>
+        <button id="compressBtn" class="primary">Compress</button>
+        <p class="hint">Everything runs locally in your browser — nothing is uploaded. SOG needs WebGPU (Chrome/Edge).</p>
+        <div id="compressStatus" class="info hidden"></div>
+      </section>
+
+      <!-- STEP 3 + 4: REVIEW & EXPORT -->
+      <section id="step-review" class="card disabled">
+        <h2><span class="num">3</span> Review &amp; <span class="num">4</span> Export</h2>
+        <div id="stats" class="stats hidden"></div>
+        <label class="check link-cams">
+          <input type="checkbox" id="linkCams" checked /> Link camera movement across both views
+        </label>
+        <div class="viewers">
+          <figure>
+            <figcaption>Original</figcaption>
+            <iframe id="viewerOrig" title="Original splat"></iframe>
+          </figure>
+          <figure>
+            <figcaption id="resultCaption">Result</figcaption>
+            <iframe id="viewerResult" title="Compressed splat"></iframe>
+            <div id="resultNote" class="note hidden"></div>
+          </figure>
+        </div>
+        <div class="export-row">
+          <button id="downloadBtn" class="primary" disabled>Download result</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
