@@ -3,7 +3,7 @@
 import {
   readFile, getInputFormat, processDataTable,
   writeFile, getOutputFormat,
-  MemoryReadFileSystem, MemoryFileSystem
+  MemoryReadFileSystem, MemoryFileSystem, logger
 } from '@playcanvas/splat-transform';
 import { createGraphicsDevice } from 'playcanvas';
 
@@ -92,6 +92,86 @@ function viewerSrc(blobUrl) {
 
 const enable = (id, on) => $(id).classList.toggle('disabled', !on);
 
+// ---- compression progress (driven by splat-transform's logger) ----------
+// The library reports determinate progress bars (decode/encode/SH iters) and
+// numbered task scopes through the global logger. We surface the active task
+// and its percentage in the compress status area.
+let progressSink = null; // set while a compress run is in flight
+logger.setRenderer({
+  handle(e) {
+    if (!progressSink) return;
+    switch (e.kind) {
+      case 'scopeStart': progressSink(e.name, null); break;
+      case 'barStart': progressSink(e.name, 0); break;
+      case 'barTick': progressSink(e.name, e.total ? e.current / e.total : null); break;
+      case 'barEnd': progressSink(e.name, 1); break;
+    }
+  }
+});
+
+function startProgressUI() {
+  const el = $('compressStatus');
+  el.classList.remove('hidden', 'error');
+  el.innerHTML = `
+    <div class="progress">
+      <div class="progress-head"><span class="loader-ring small"></span><span class="progress-label">Compressing locally…</span></div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
+    </div>`;
+  const label = el.querySelector('.progress-label');
+  const track = el.querySelector('.progress-track');
+  const fill = el.querySelector('.progress-fill');
+  let last = '';
+  // Direct DOM writes (no rAF): heavy steps block the main thread, so the
+  // browser only repaints when work yields — at which point the latest value
+  // is shown. Skipping rAF also keeps it working in backgrounded tabs.
+  progressSink = (name, ratio) => {
+    const pretty = name ? name.charAt(0).toUpperCase() + name.slice(1) : 'Working';
+    const pct = ratio == null ? -1 : Math.round(ratio * 100);
+    const key = `${pretty}|${pct}`;
+    if (key === last) return;
+    last = key;
+    if (ratio == null) {
+      track.classList.add('indeterminate');
+      label.textContent = `${pretty}…`;
+    } else {
+      track.classList.remove('indeterminate');
+      fill.style.width = `${pct}%`;
+      label.textContent = `${pretty} · ${pct}%`;
+    }
+  };
+}
+const stopProgressUI = () => { progressSink = null; };
+
+// ---- viewer mount with load animation -----------------------------------
+// Show a spinner overlay while the splat decodes in the iframe, then fade the
+// rendered view in once the SuperSplat viewer reports it's done.
+function mountViewer(wrapId, iframeId, blobUrl) {
+  const wrap = $(wrapId);
+  const iframe = $(iframeId);
+  wrap.classList.add('loading');
+  wrap.classList.remove('ready');
+  iframe.src = viewerSrc(blobUrl);
+  watchViewerReady(iframe, () => {
+    wrap.classList.remove('loading');
+    wrap.classList.add('ready');
+  });
+}
+
+function watchViewerReady(iframe, onReady, tries = 0) {
+  let ready = false;
+  try {
+    const d = iframe.contentDocument;
+    if (d && d.readyState === 'complete') {
+      const lt = d.getElementById('loadingText');
+      const canvas = d.querySelector('canvas');
+      if (canvas && (!lt || lt.textContent.trim() === '100%')) ready = true;
+    }
+  } catch { /* cross-frame timing */ }
+  if (ready) { onReady(); return; }
+  if (tries < 250) setTimeout(() => watchViewerReady(iframe, onReady, tries + 1), 100);
+  else onReady(); // reveal anyway after ~25s
+}
+
 // ---- step 1: load (local, no upload) ------------------------------------
 
 const dropzone = $('dropzone');
@@ -134,8 +214,9 @@ async function loadFile(file) {
     // Reset decimate, mount original viewer, reset review section.
     $('decimateSlider').value = 100;
     syncDecimateFromSlider();
-    $('viewerOrig').src = viewerSrc(setBlob('origBlobUrl', origViewBytes));
+    mountViewer('wrapOrig', 'viewerOrig', setBlob('origBlobUrl', origViewBytes));
     $('viewerResult').removeAttribute('src');
+    $('wrapResult').classList.remove('loading', 'ready');
     $('stats').classList.add('hidden');
     $('resultNote').classList.add('hidden');
     $('downloadBtn').disabled = true;
@@ -206,9 +287,7 @@ async function compress() {
   if (!state.originalBytes) return;
   const fmt = FORMATS[formatSel.value];
 
-  const status = $('compressStatus');
-  status.classList.remove('hidden', 'error');
-  status.innerHTML = '<span class="spinner"></span> Compressing locally…';
+  startProgressUI();
   $('compressBtn').disabled = true;
   const started = performance.now();
 
@@ -248,9 +327,12 @@ async function compress() {
       ratio: outSize / inSize, durationMs: performance.now() - started, previewBytes
     });
   } catch (err) {
+    const status = $('compressStatus');
+    status.classList.remove('hidden');
     status.classList.add('error');
     status.textContent = `Error: ${err.message || err}`;
   } finally {
+    stopProgressUI();
     $('compressBtn').disabled = false;
   }
 }
@@ -272,7 +354,7 @@ function showResult(d) {
 
   $('resultCaption').textContent = `Result · ${d.label}`;
   const note = $('resultNote');
-  $('viewerResult').src = viewerSrc(setBlob('previewBlobUrl', d.previewBytes));
+  mountViewer('wrapResult', 'viewerResult', setBlob('previewBlobUrl', d.previewBytes));
   if (d.isProxy) {
     note.classList.remove('hidden');
     note.textContent = `Preview shown as a PLY proxy (same splats as the ${d.label}).`;

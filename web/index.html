@@ -89,11 +89,17 @@
         <div class="viewers">
           <figure>
             <figcaption>Original</figcaption>
-            <iframe id="viewerOrig" title="Original splat"></iframe>
+            <div class="viewer-wrap" id="wrapOrig">
+              <iframe id="viewerOrig" title="Original splat"></iframe>
+              <div class="viewer-loading"><span class="loader-ring"></span><span class="loader-text">Loading splat…</span></div>
+            </div>
           </figure>
           <figure>
             <figcaption id="resultCaption">Result</figcaption>
-            <iframe id="viewerResult" title="Compressed splat"></iframe>
+            <div class="viewer-wrap" id="wrapResult">
+              <iframe id="viewerResult" title="Compressed splat"></iframe>
+              <div class="viewer-loading"><span class="loader-ring"></span><span class="loader-text">Loading splat…</span></div>
+            </div>
             <div id="resultNote" class="note hidden"></div>
           </figure>
         </div>
